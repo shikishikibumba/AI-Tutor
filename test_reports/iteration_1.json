@@ -1,0 +1,40 @@
+{
+  "summary": "First-run full-stack test of EASA Part-66 AI Study Assistant (Module 3). Backend: 16/16 pytest cases passed covering auth (admin login + 401 on no/wrong token), admin status/report/files/jobs/questions, student modules/questions/attempts/practice/performance/mistakes/study-plan, and exam creation (52 Qs, 3 options a/b/c, no correct_answer exposed, invalid answer 'D' returns 400). Frontend: Admin console (login, First-run report YES/YES, 52/65 min/3-alt-1-correct/75% pass/VALID/VALID/ACTIVE, Configuration 20-row distribution totaling 52 confirmed, KB with 3 docs, 69 audit toggles, Generation shows 2 completed + 1 interrupted job - none triggered). Student dashboard (Module 3, 52 Q, 39/52 threshold, Level 1 & 2 only). Question Bank (53 rows, all filters including Level filter restricted to L1/L2, QuestionCard dialog with 3 options a/b/c, submit, answer-result/explanation/source-drawer with doc-name, page, submodule, page-image). Adaptive Practice (option/submit/next, tally updates 0/0 -> 0/1). Mock Exam (started, 52 Qs, 3 options each, 65 min timer, navigator, flag, answer, submit via native window.confirm, result banner with by-level 1/7 + 0/45 and by-submodule 20 rows and 52 review items with explanations). Mistake Bank (3 mistakes recorded with Concept Misunderstanding classification, Pattern insights 'You have answered 4 Level 1 questions on this topic and made 3 concept misunderstanding mistakes.', SOURCE buttons). AI Tutor (Ohm's law -> detailed answer with 3 SOURCE p.X buttons incl. p.111 and p.112 and R=V/I formula; off-syllabus 'Boeing 747' -> SOURCE INSUFFICIENT refusal with the exact prescribed text; all 6 mode buttons present). 20-Day Plan (20 day cards, start button, toggle works).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "missing_data_testids_minor": [
+      {"screen": "Admin First-run report", "note": "Spec mentioned report-questions/report-options/report-correct/report-active; actual testids are report-qcount, report-format (combined 3 alt/1 correct), report-levels, report-distribution. Data is correctly displayed; only testid naming differs."},
+      {"screen": "Mock Exam result page", "note": "The 'By EASA knowledge level' and 'By submodule' breakdown blocks lack data-testid='exam-by-level-*' and 'exam-by-submodule-*'. Values are correctly rendered. 52 review-N testids are present."},
+      {"screen": "Mistake Bank", "note": "Mistake row cards and the Pattern Insights block lack data-testid='mistake-row-*' and 'mistake-insights'. Functionality works (3 mistakes shown with mistake type and SOURCE buttons; insights text matches spec)."},
+      {"screen": "AI Tutor", "note": "Individual messages have data-testid='tutor-message' (not tutor-message-N). tutor-source-N selector style not used; sources rendered as 'SOURCE p.X' buttons. tutor-insufficient badge present and working."},
+      {"screen": "Admin KB tab", "note": "Doc list items testid starts with 'kb-doc-' plus doc_id suffix (works)."}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/backend_test.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "(Optional) Add missing/renamed data-testids per spec to improve testability: report-questions/report-options/report-correct/report-active on First-run report, exam-by-level-* and exam-by-submodule-* on exam results, mistake-row-* and mistake-insights on /mistakes, tutor-source-N / tutor-message-N on Tutor messages. Current UI functionality is correct; this is only a testid naming/presence gap."
+  ],
+  "critical_code_review_comments": [
+    "MockExam.jsx uses native window.confirm() for 'Submit exam' — a shadcn/UI dialog with data-testid='exam-submit-confirm' as specified in review request would be more testable and consistent with the app's design system.",
+    "Admin seed/first-run cleanup is correctly idempotent: pending/running jobs reset on startup; already-ingested docs skipped.",
+    "GET /api/questions correctly strips correct_answer from the response payload; validated in test_questions_no_correct_answer_exposed. Exam questions endpoint also strips correct_answer.",
+    "POST /api/questions/{id}/attempt rejects selected='D' with HTTP 400 as required.",
+    "CORS configured with allow_credentials=True and explicit origin list from env (good)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/backend_test.py"
+  ],
+  "success_rate": {"backend": "100% (16/16)", "frontend": "~95% (all flows functional; only testid naming gaps)"},
+  "test_credentials": "Admin admin@easa-study.app / Part66Admin!2026 (works).",
+  "seed_data_creation": "During testing: 1 practice attempt + 1 full mock exam submitted with 2 answered / 50 unanswered on profile_id='local'. Created 3 mistakes in Mistake Bank (all submodule 3.1 Concept Misunderstanding, Level 1). 20-day plan started (plan-toggle-1 marked complete).",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Backend fully green. Validated questions count: 53 at test time (may grow as background generation jobs run). An exam was already running at the start of testing (from earlier backend test POST /api/exams), so the /exam page landed directly in the active-exam view the first time; I handled it with a page.on('dialog', accept) listener and submitted via exam-submit-side. For future runs, if you create a fresh exam via API the UI will skip the pre-exam landing page; use a fresh profile_id or submit the active exam first to see the 'Start mock exam' screen. Do NOT trigger new generation jobs (costs LLM credits; 409 if one is running). Tutor LLM calls take 10-35s; keep to a few queries.",
+  "rca of the issue": "No bugs requiring RCA. All critical specified behavior verified working."
+}
