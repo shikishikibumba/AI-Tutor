@@ -1,0 +1,73 @@
+{
+  "project_name": "EASA Part-66 AI Study Assistant (Module 3 Electrical Fundamentals)",
+  "design_archetype": "The Performance Pro & Tactical Avionics Instrument",
+  "theme_strategy": {
+    "default_mode": "dark",
+    "supported_modes": ["dark", "light"],
+    "rationale": "Aviation maintenance and engineering tools demand high legibility, low cognitive fatigue, and cockpit-instrument precision. Deep slate backgrounds (#0B0F17) with glowing amber/cyan telemetry indicators evoke professional avionics flight decks while highlighting source citations and mistake analytics."
+  },
+  "typography": {
+    "font_family_headings": "Outfit, Barlow, sans-serif",
+    "font_family_body": "Inter, system-ui, sans-serif",
+    "font_family_mono": "JetBrains Mono, IBM Plex Mono, monospace",
+    "scale": {
+      "hero_title": "text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight",
+      "h1": "text-3xl sm:text-4xl font-bold tracking-tight",
+      "h2": "text-2xl sm:text-3xl font-semibold tracking-tight",
+      "h3": "text-xl sm:text-2xl font-semibold",
+      "h4": "text-lg sm:text-xl font-medium",
+      "body": "text-base leading-relaxed",
+      "body_sm": "text-sm leading-normal",
+      "caption": "text-xs font-mono uppercase tracking-widest text-slate-400"
+    }
+  },
+  "colors": {
+    "slate_bg_main": "#0B0F17",
+    "slate_card_surface": "#131B2A",
+    "slate_border": "#1E293B",
+    "amber_highlight": "#F59E0B",
+    "cyan_active": "#06B6D4",
+    "emerald_pass": "#10B981",
+    "rose_fail": "#F43F5E",
+    "text_primary": "#F8FAFC",
+    "text_secondary": "#94A3B8",
+    "gradient_avionics": "bg-gradient-to-r from-sky-500/10 via-cyan-500/10 to-transparent",
+    "contrast_rules": "Ensure all text on dark slate surfaces achieves minimum 4.5:1 ratio. Never use transparent headers without backdrop blur (backdrop-blur-md bg-slate-900/90)."
+  },
+  "visual_enhancers": {
+    "glassmorphism": "backdrop-blur-xl bg-slate-900/80 border border-slate-800/80 shadow-2xl",
+    "tracing_beam": "border border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.15)]",
+    "status_badges": "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono font-medium border"
+  },
+  "grids_and_layouts": {
+    "dashboard": "grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6",
+    "exam_view": "grid grid-cols-1 lg:grid-cols-12 gap-8",
+    "question_navigator": "grid grid-cols-8 gap-2 max-h-[300px] overflow-y-auto p-3 bg-slate-950/50 rounded-lg border border-slate-800"
+  },
+  "image_urls": [
+    {
+      "category": "hero_cockpit",
+      "description": "Airplane cockpit night instrument panel",
+      "url": "https://images.unsplash.com/photo-1587408811730-1a978e6c407d?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjY2NzZ8MHwxfHNlYXJjaHwyfHxhaXJjcmFmdCUyMGVsZWN0cmljYWwlMjBjb2NrcGl0JTIwY29ja3BpdCUyMGluc3RydW1lbnQlMjBwYW5lbCUyMGF2aWF0aW9uJTIwZW5naW5lZXJpbmd8ZW58MHx8fHwxNzkxMDExMjE1fDA&ixlib=rb-4.1.0&q=85"
+    },
+    {
+      "category": "cockpit_lighting",
+      "description": "Warm orange flight panel controls",
+      "url": "https://images.unsplash.com/photo-1552773346-ca6976a5d4ca?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjY2NzZ8MHwxfHNlYXJjaHw0fHxhaXJjcmFmdCUyMGVsZWN0cmljYWwlMjBjb2NrcGl0JTIwY29ja3BpdCUyMGluc3RydW1lbnQlMjBwYW5lbCUyMGF2aWF0aW9uJTIwZW5naW5lZXJpbmd8ZW58MHx8fHwxNzkxMDExMjE1fDA&ixlib=rb-4.1.0&q=85"
+    }
+  ],
+  "instructions_to_main_agent": {
+    "core_architecture": "Build a responsive React (.js) application with modular tabs/views: Dashboard, AI Tutor, Question Bank, Practice Mode, Mock Exam, Mistake Bank, 20-Day Plan, and Admin Portal.",
+    "source_grounding_feature": "Every AI response and Practice/Mock explanation MUST feature an explicit 'SOURCE' button. Clicking opens a drawer showing page image snippet, module 3 submodule name, document title, section heading, and page number.",
+    "exam_timer_and_rules": "Mock exam must strictly enforce 52 questions in 65 minutes with 75% pass mark threshold (39/52), 3 alternatives (A/B/C) per question, real-time question navigator grid, and detailed post-test analytical breakdown by submodule & Level 1/Level 2.",
+    "admin_console": "Include JWT admin authentication modal/page, Knowledge-Base ingestion status, First-run processing report with 6 validation checks, Full distribution tables, and Module activation toggles.",
+    "testing_ids": "Ensure data-testid attributes are present on key inputs, nav links, source buttons, option choices (data-testid='option-a'), submit buttons, and filter select elements."
+  },
+  "UNIVERSAL GUIDELINES FOR MAIN AGENT": [
+    "Always include data-testid on interactive elements for automated verification.",
+    "Maintain high contrast dark slate theme by default with clean borders (border-slate-800).",
+    "Never rely on transparent dropdowns or ungrounded modal overlays.",
+    "Use JetBrains Mono / IBM Plex Mono for all formulas, electrical units (V, A, Ohms, Farads, Hz), and citation codes.",
+    "Ensure responsive layout works seamlessly from mobile (375px) to ultra-wide displays."
+  ]
+}
