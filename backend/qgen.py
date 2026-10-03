@@ -19,10 +19,11 @@ def level_text(defs, level):
     return f"LEVEL {level}: {d.get('summary', '')}\n{objs}"
 
 
-def window(chunks, max_chars=16000, max_pages=7):
+def window(chunks, usage=None, max_chars=16000, max_pages=7):
     if not chunks:
         return []
-    start = random.randrange(len(chunks))
+    order = sorted(range(len(chunks)), key=lambda i: ((usage or {}).get(chunks[i]["page_number"], 0), random.random()))
+    start = random.choice(order[: max(2, len(order) // 3)])
     out, size = [], 0
     for c in chunks[start:] + chunks[:start]:
         if out and (size + len(c["text"]) > max_chars or len(out) >= max_pages):
@@ -72,7 +73,8 @@ HARD RULES:
 4. Do not write questions that need the student to see a figure/diagram that is not described in text.
 5. Level 1 = familiarity, typical terms, simple description (no calculations). Level 2 = theoretical fundamentals, general description, formulae with physical laws, reading schematics, practical application. Level 3 = detailed theory and interrelationships, preparing schematics, manufacturer instructions, interpreting results. Do NOT label a question Level 2 just because it is harder.
 6. Each question must cite the exact pdf_page it is drawn from and include a VERBATIM supporting quote (copied exactly, 10-60 words) from that page.
-7. Do not duplicate these existing questions: {existing[:30]}
+7. Do NOT duplicate or closely paraphrase any of these existing questions for this submodule - test a DIFFERENT fact, relationship or application:
+{chr(10).join('- ' + e[:140] for e in existing[-80:]) or '- (none yet)'}
 
 STYLE REFERENCE ONLY (example question bank - use for tone/format/stem style only; NEVER copy, and NEVER take facts or answers from it; its answers are not authoritative):
 {ex or '- (none)'}
@@ -123,7 +125,7 @@ Return JSON:
  "source_issue": null or "describe any apparent inconsistency/error in the SOURCE text itself (do not correct it)"}}"""
 
 
-def deterministic_checks(q, sub, chunks_by_page):
+def deterministic_checks(q, sub, chunks_by_page, existing=()):
     opts = [str(q.get(k) or "").strip() for k in ("option_a", "option_b", "option_c")]
     checks = {}
     fmt_ok = all(opts) and len(set(o.lower() for o in opts)) == 3 and not any(q.get(k) for k in ("option_d", "option_e"))
@@ -142,6 +144,9 @@ def deterministic_checks(q, sub, chunks_by_page):
     score = fuzz.partial_ratio(quote, norm_text(page["text"])) if page and len(quote) > 20 else 0
     checks["quote_traceable"] = {"result": "PASS" if score >= 88 else "FAIL",
                                  "note": f"verbatim quote match {score:.0f}% on pdf page {q.get('source_page')}"}
+    stem = norm_text(q.get("question_text") or "")
+    dup = max((fuzz.token_set_ratio(stem, norm_text(e)) for e in existing), default=0)
+    checks["not_duplicate"] = {"result": "PASS" if dup < 88 else "FAIL", "note": f"max similarity to existing questions {dup:.0f}%"}
     checks["syllabus_page"] = {"result": "PASS" if page and page["submodule"] == sub["parent_key"] else "FAIL",
                                "note": f"cited page belongs to submodule {page['submodule'] if page else 'n/a'}"}
     return checks
@@ -161,12 +166,16 @@ async def generate_for_submodule(cfg, sub, n, job_id=None):
     examples = await db.example_questions.find({"module": cfg["module"], "submodule": sub["parent_key"]}, {"_id": 0}).to_list(300)
     validated = rejected = 0
     attempts = 0
-    while validated < n and attempts < max(2, n * 2):
+    while validated < n and attempts < max(3, n * 2):
         attempts += 1
-        win = window(chunks)
+        prior = await db.questions.find({"config_id": cfg["config_id"], "submodule": sub["key"], "status": {"$ne": "rejected"}},
+                                        {"_id": 0, "question_text": 1, "source_page": 1}).to_list(1000)
+        existing = [q["question_text"] for q in prior]
+        usage = {}
+        for q in prior:
+            usage[q.get("source_page")] = usage.get(q.get("source_page"), 0) + 1
+        win = window(chunks, usage)
         by_page = {c["page_number"]: c for c in win}
-        existing = [q["question_text"] for q in await db.questions.find(
-            {"config_id": cfg["config_id"], "submodule": sub["key"]}, {"_id": 0, "question_text": 1}).to_list(300)]
         try:
             async with SEM:
                 out = await llm_json(GEN_SYSTEM, gen_prompt(cfg, sub, win, rules, defs, min(3, n - validated), existing,
@@ -178,17 +187,19 @@ async def generate_for_submodule(cfg, sub, n, job_id=None):
             await log_job(job_id, f"{sub['key']}: source insufficient for pages {list(by_page)} - nothing generated")
             continue
         for q in out["questions"][: n - validated]:
-            ok = await validate_and_store(cfg, sub, q, win, by_page, rules, defs)
+            ok = await validate_and_store(cfg, sub, q, win, by_page, rules, defs, existing)
+            if ok:
+                existing.append(q.get("question_text") or "")
             validated += ok
             rejected += 0 if ok else 1
         await log_job(job_id, f"{sub['key']}: {validated}/{n} validated, {rejected} rejected")
     return validated, rejected
 
 
-async def validate_and_store(cfg, sub, q, win, by_page, rules, defs):
+async def validate_and_store(cfg, sub, q, win, by_page, rules, defs, existing=()):
     q["knowledge_level"] = int(q.get("knowledge_level") or 0)
     q["source_page"] = int(q.get("source_page") or 0) if str(q.get("source_page", "")).isdigit() else q.get("source_page")
-    checks = deterministic_checks(q, sub, by_page)
+    checks = deterministic_checks(q, sub, by_page, existing)
     v = {}
     if all(c["result"] == "PASS" for c in checks.values()):
         try:

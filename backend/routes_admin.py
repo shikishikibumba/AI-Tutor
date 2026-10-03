@@ -232,6 +232,10 @@ async def generate(body: GenIn):
         raise HTTPException(400, "Question generator is only active after the configuration is confirmed")
     if any(j for j in RUNNING):
         raise HTTPException(409, "A generation job is already running")
+    return await create_job(cfg, body)
+
+
+async def create_job(cfg, body):
     targets = {}
     if body.exam_sets:
         for s in cfg["submodules"]:
@@ -241,7 +245,7 @@ async def generate(body: GenIn):
         targets[body.submodule] = max(1, min(body.count, 15))
     else:
         targets = {s["key"]: max(1, min(body.count, 10)) for s in cfg["submodules"] if s["questions"]}
-    job = {"job_id": new_id("job"), "config_id": cfg["config_id"], "module": cfg["module"], "targets": targets,
+    job = {"job_id": new_id("job"), "config_id": cfg["config_id"], "module": cfg["module"], "targets": targets, "exam_sets": body.exam_sets,
            "status": "queued", "log": [], "progress": {}, "totals": {"validated": 0, "rejected": 0}, "created_at": now_iso()}
     await db.jobs.insert_one(dict(job))
     start_job(job["job_id"])

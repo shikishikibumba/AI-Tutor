@@ -41,6 +41,7 @@ async def first_run():
         if not await db.documents.find_one({"filename": m["filename"]}):
             await routes_admin.register_document(m["filename"], m["document_type"], m.get("module"), m["title"])
     await db.documents.update_many({"ingestion_status": "processing"}, {"$set": {"ingestion_status": "pending"}})
+    interrupted = await db.jobs.find({"status": {"$in": ["running", "queued"]}}, {"_id": 0}).to_list(20)
     await db.jobs.update_many({"status": {"$in": ["running", "queued"]}}, {"$set": {"status": "interrupted"}})
     pending = await db.documents.find({"ingestion_status": "pending"}, {"_id": 0}).sort("document_type", -1).to_list(50)
     pending.sort(key=lambda d: d["document_type"] != "easa_guideline")
@@ -56,6 +57,12 @@ async def first_run():
             if doc:
                 await configure_module(m["module"], doc["document_id"])
                 log.info("Module %s configuration extracted - awaiting administrator confirmation", m["module"])
+    for j in interrupted:
+        cfg = await db.exam_configs.find_one({"config_id": j["config_id"], "status": "confirmed"}, {"_id": 0})
+        if j.get("exam_sets") and cfg:
+            log.info("Resuming interrupted bank-fill job (%s exam sets)", j["exam_sets"])
+            await routes_admin.create_job(cfg, routes_admin.GenIn(config_id=cfg["config_id"], exam_sets=j["exam_sets"]))
+            break
 
 
 @app.on_event("startup")

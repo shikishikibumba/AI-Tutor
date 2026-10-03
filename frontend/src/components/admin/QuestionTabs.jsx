@@ -37,7 +37,7 @@ export function GenerationTab({ report, refresh }) {
         <div className="panel p-6">
           <div className="caption mb-3">Fill bank to support N full mock exams (EASA distribution)</div>
           <div className="flex gap-3">
-            <input data-testid="gen-sets" type="number" min={1} max={5} value={sets} onChange={(e) => setSets(Number(e.target.value))} className="w-20 bg-slate-900 border border-slate-700 rounded px-2 text-sm" />
+            <input data-testid="gen-sets" type="number" min={1} max={12} value={sets} onChange={(e) => setSets(Number(e.target.value))} className="w-20 bg-slate-900 border border-slate-700 rounded px-2 text-sm" />
             <button data-testid="gen-sets-button" disabled={locked} onClick={() => go({ exam_sets: sets })} className="px-4 py-2 rounded bg-amber-500 text-slate-950 text-sm font-semibold disabled:opacity-40">Fill shortfall</button>
           </div>
           <p className="text-[11px] text-slate-500 mt-2">Every candidate passes deterministic checks + an independent source-locked audit. Failures are rejected and regenerated.</p>
